@@ -1,0 +1,17 @@
+digraph "AWS DevOps Agent Multi-Account Architecture" {
+	graph [fontcolor="#2D3436" fontname="Sans-Serif" fontsize=15 label="AWS DevOps Agent Multi-Account Architecture" nodesep=0.60 pad=2.0 rankdir=TB ranksep=0.75 splines=ortho]
+	node [fixedsize=true fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 height=1.4 imagescale=true labelloc=b shape=box style=rounded width=1.4]
+	edge [color="#7B8894"]
+	subgraph cluster_Administrator {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label=Administrator labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"2eb4baed71bf43a983f6f42c52d3e279" [label="DevOps Admin" height=1.9 image="/Users/mv2s/.cache/uv/archive-v0/0PE2BhVRDGCpNzxjrdQ58/lib/python3.14/site-packages/resources/aws/general/user.png" shape=none]
+	}
+	subgraph "cluster_Monitoring Account
+(414351351247 - zayo-ct)" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Monitoring Account
+(414351351247 - zayo-ct)" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		subgraph "cluster_Terraform Managed" {
+			graph [bgcolor="#EBF3E7" fontname="Sans-Serif" fontsize=12 label="Terraform Managed" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		}
+	}
+}

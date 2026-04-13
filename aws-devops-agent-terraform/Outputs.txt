@@ -1,0 +1,15 @@
+Outputs:
+
+account_id = "414351351247"
+agent_space_arn = "arn:aws:aidevops:us-east-1:414351351247:agentspace/fe2370ca-ed86-43e3-b8e4-33af40b5605b"
+agent_space_id = "fe2370ca-ed86-43e3-b8e4-33af40b5605b"
+agent_space_name = "ZayodevopsAgentSpace"
+auth_flow = "iam"
+cross_account_trust_policy = {}
+devops_agentspace_role_arn = "arn:aws:iam::414351351247:role/DevOpsAgentRole-AgentSpace-466bd434"
+devops_agentspace_role_name = "DevOpsAgentRole-AgentSpace-466bd434"
+devops_operator_role_arn = "arn:aws:iam::414351351247:role/DevOpsAgentRole-WebappAdmin-466bd434"
+devops_operator_role_name = "DevOpsAgentRole-WebappAdmin-466bd434"
+external_account_association_ids = {}
+external_account_role_arns = {}
+manual_setup_instructions = <<EOT

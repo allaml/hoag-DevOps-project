@@ -1,0 +1,340 @@
+# AWS DevOps Agent Architecture - Draw.io Instructions
+
+## Method 1: Import AWS Architecture Icons in Draw.io
+
+### Step 1: Open Draw.io
+1. Go to https://app.diagrams.net/ or open desktop app
+2. Create new diagram
+
+### Step 2: Import AWS Icons
+1. Click **More Shapes** (bottom left)
+2. Search for "AWS 19" or "AWS"
+3. Enable these libraries:
+   - AWS 19 (latest AWS icons)
+   - AWS 17
+4. Click **Apply**
+
+### Step 3: Find Required Icons
+
+**From AWS 19 Library:**
+- **Management & Governance:**
+  - CloudFormation (orange)
+  - Organizations (orange)
+  - Systems Manager (orange)
+  
+- **Security, Identity & Compliance:**
+  - IAM Role (red)
+  - IAM (red)
+  
+- **Compute:**
+  - EC2 (orange)
+  - Lambda (orange)
+  - ECS (orange)
+  
+- **Database:**
+  - RDS (blue)
+  - DynamoDB (blue)
+  
+- **Storage:**
+  - S3 (green)
+  
+- **Management & Governance:**
+  - CloudWatch (pink/red)
+  - CloudTrail (pink/red)
+
+- **General:**
+  - User (gray)
+  - AWS Cloud (orange border)
+
+---
+
+## Method 2: Use This Draw.io XML Template
+
+### Instructions:
+1. Copy the XML code below
+2. Open Draw.io
+3. File → Import from → Text
+4. Paste the XML
+5. Click Import
+
+### Draw.io XML Code:
+
+```xml
+<mxfile host="app.diagrams.net">
+  <diagram name="AWS DevOps Agent Architecture">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- Title -->
+        <mxCell id="title" value="AWS DevOps Agent Multi-Account Architecture" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="320" y="20" width="530" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Administrator -->
+        <mxCell id="admin" value="DevOps Administrator" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#232F3D;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.user;" vertex="1" parent="1">
+          <mxGeometry x="520" y="80" width="78" height="78" as="geometry"/>
+        </mxCell>
+        
+        <!-- Monitoring Account Container -->
+        <mxCell id="monitoring-container" value="Monitoring Account (414351351247 - zayo-ct)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF4E6;strokeColor=#FF9900;strokeWidth=3;verticalAlign=top;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="120" y="200" width="960" height="280" as="geometry"/>
+        </mxCell>
+        
+        <!-- Terraform Section -->
+        <mxCell id="terraform-container" value="Terraform Managed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F2FF;strokeColor=#0066CC;strokeWidth=2;verticalAlign=top;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="160" y="240" width="400" height="200" as="geometry"/>
+        </mxCell>
+        
+        <!-- Agent Space -->
+        <mxCell id="agent-space" value="DevOps Agent Space" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#E7157B;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.devops_guru;" vertex="1" parent="1">
+          <mxGeometry x="200" y="280" width="78" height="78" as="geometry"/>
+        </mxCell>
+        
+        <!-- IAM Role -->
+        <mxCell id="iam-role" value="DevOpsAgentRole" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.role;" vertex="1" parent="1">
+          <mxGeometry x="320" y="280" width="78" height="44" as="geometry"/>
+        </mxCell>
+        
+        <!-- Terraform Icon -->
+        <mxCell id="terraform" value="Terraform" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#5C4EE5;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.generic_database;" vertex="1" parent="1">
+          <mxGeometry x="440" y="280" width="78" height="78" as="geometry"/>
+        </mxCell>
+        
+        <!-- CloudFormation Section -->
+        <mxCell id="cf-container" value="CloudFormation StackSets" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6E6;strokeColor=#CC0000;strokeWidth=2;verticalAlign=top;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="640" y="240" width="400" height="200" as="geometry"/>
+        </mxCell>
+        
+        <!-- CloudFormation Icon -->
+        <mxCell id="cloudformation" value="StackSet Deployment" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#E7157B;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.cloudformation;" vertex="1" parent="1">
+          <mxGeometry x="800" y="280" width="78" height="78" as="geometry"/>
+        </mxCell>
+        
+        <!-- Target Accounts Container -->
+        <mxCell id="target-container" value="50 Target Accounts (Hub2.0 OU)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#666666;strokeWidth=3;verticalAlign=top;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="120" y="540" width="960" height="220" as="geometry"/>
+        </mxCell>
+        
+        <!-- Dev OU -->
+        <mxCell id="dev-ou" value="Dev OU (11 accounts)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;strokeWidth=2;verticalAlign=top;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="160" y="580" width="260" height="140" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="dev-role" value="Cross-Account Role" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.role;" vertex="1" parent="1">
+          <mxGeometry x="180" y="620" width="50" height="28" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="dev-ec2" value="EC2" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.ec2_instance;" vertex="1" parent="1">
+          <mxGeometry x="260" y="620" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="dev-lambda" value="Lambda" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.lambda_function;" vertex="1" parent="1">
+          <mxGeometry x="320" y="620" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="dev-rds" value="RDS" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#2E73B8;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.rds_instance;" vertex="1" parent="1">
+          <mxGeometry x="180" y="670" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="dev-s3" value="S3" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#3F8624;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.s3_bucket;" vertex="1" parent="1">
+          <mxGeometry x="260" y="670" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Test OU -->
+        <mxCell id="test-ou" value="Test OU (12 accounts)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;verticalAlign=top;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="450" y="580" width="260" height="140" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="test-role" value="Cross-Account Role" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.role;" vertex="1" parent="1">
+          <mxGeometry x="470" y="620" width="50" height="28" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="test-ec2" value="EC2" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.ec2_instance;" vertex="1" parent="1">
+          <mxGeometry x="550" y="620" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="test-lambda" value="Lambda" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.lambda_function;" vertex="1" parent="1">
+          <mxGeometry x="610" y="620" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="test-rds" value="RDS" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#2E73B8;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.rds_instance;" vertex="1" parent="1">
+          <mxGeometry x="470" y="670" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="test-s3" value="S3" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#3F8624;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.s3_bucket;" vertex="1" parent="1">
+          <mxGeometry x="550" y="670" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Prod OU -->
+        <mxCell id="prod-ou" value="Prod OU (11 accounts)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;strokeWidth=2;verticalAlign=top;fontSize=12;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="740" y="580" width="260" height="140" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="prod-role" value="Cross-Account Role" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.role;" vertex="1" parent="1">
+          <mxGeometry x="760" y="620" width="50" height="28" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="prod-ec2" value="EC2" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.ec2_instance;" vertex="1" parent="1">
+          <mxGeometry x="840" y="620" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="prod-lambda" value="Lambda" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.lambda_function;" vertex="1" parent="1">
+          <mxGeometry x="900" y="620" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="prod-rds" value="RDS" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#2E73B8;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.rds_instance;" vertex="1" parent="1">
+          <mxGeometry x="760" y="670" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="prod-s3" value="S3" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#3F8624;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.s3_bucket;" vertex="1" parent="1">
+          <mxGeometry x="840" y="670" width="40" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Connections -->
+        <mxCell id="conn1" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#FF9900;" edge="1" parent="1" source="admin" target="terraform-container">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="559" y="180" as="sourcePoint"/>
+            <mxPoint x="609" y="130" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="conn2" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#FF9900;" edge="1" parent="1" source="admin" target="cf-container">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="559" y="180" as="sourcePoint"/>
+            <mxPoint x="609" y="130" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="conn3" value="Deploys Roles" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#CC0000;fontSize=11;" edge="1" parent="1" source="cloudformation" target="target-container">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="839" y="380" as="sourcePoint"/>
+            <mxPoint x="889" y="330" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="conn4" value="Assumes Roles &amp; Monitors" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#0066CC;fontSize=11;" edge="1" parent="1" source="agent-space" target="dev-ou">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="239" y="380" as="sourcePoint"/>
+            <mxPoint x="289" y="330" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="conn5" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#0066CC;" edge="1" parent="1" source="agent-space" target="test-ou">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="239" y="380" as="sourcePoint"/>
+            <mxPoint x="289" y="330" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="conn6" value="" style="endArrow=classic;html=1;strokeWidth=2;strokeColor=#0066CC;" edge="1" parent="1" source="agent-space" target="prod-ou">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="239" y="380" as="sourcePoint"/>
+            <mxPoint x="289" y="330" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+```
+
+---
+
+## Method 3: Step-by-Step Manual Creation in Draw.io
+
+### Layout Structure:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Administrator (User Icon)                 │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+        ┌──────────────┴──────────────┐
+        │                             │
+┌───────▼────────┐           ┌────────▼────────┐
+│   Terraform    │           │ CloudFormation  │
+│   Container    │           │   Container     │
+│                │           │                 │
+│ • Agent Space  │           │ • StackSet      │
+│ • IAM Role     │           │                 │
+└────────────────┘           └─────────────────┘
+        │                             │
+        └──────────────┬──────────────┘
+                       │
+        ┌──────────────┴──────────────┐
+        │                             │
+┌───────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐
+│   Dev OU       │  │   Test OU       │  │   Prod OU       │
+│ (11 accounts)  │  │ (12 accounts)   │  │ (11 accounts)   │
+│                │  │                 │  │                 │
+│ • IAM Role     │  │ • IAM Role      │  │ • IAM Role      │
+│ • EC2          │  │ • EC2           │  │ • EC2           │
+│ • Lambda       │  │ • Lambda        │  │ • Lambda        │
+│ • RDS          │  │ • RDS           │  │ • RDS           │
+│ • S3           │  │ • S3            │  │ • S3            │
+└────────────────┘  └─────────────────┘  └─────────────────┘
+```
+
+### Icons to Use:
+
+1. **User Icon** - Search: "AWS User" or use generic user icon
+2. **CloudFormation** - Search: "AWS CloudFormation" (orange stack icon)
+3. **IAM Role** - Search: "AWS IAM Role" (red badge icon)
+4. **EC2** - Search: "AWS EC2 Instance" (orange server icon)
+5. **Lambda** - Search: "AWS Lambda" (orange lambda icon)
+6. **RDS** - Search: "AWS RDS" (blue database icon)
+7. **S3** - Search: "AWS S3 Bucket" (green bucket icon)
+8. **Organizations** - Search: "AWS Organizations" (orange org icon)
+
+### Color Scheme:
+- **Monitoring Account Container:** Light orange (#FFF4E6) with orange border (#FF9900)
+- **Terraform Section:** Light blue (#E6F2FF) with blue border (#0066CC)
+- **CloudFormation Section:** Light red (#FFE6E6) with red border (#CC0000)
+- **Dev OU:** Light green (#D5E8D4) with green border (#82B366)
+- **Test OU:** Light blue (#DAE8FC) with blue border (#6C8EBF)
+- **Prod OU:** Light orange (#FFE6CC) with orange border (#D79B00)
+
+---
+
+## Method 4: Export from Lucidchart Template
+
+1. Open Lucidchart
+2. Create new document
+3. Search for "AWS Architecture" template
+4. Use AWS icon library (automatically available)
+5. Drag and drop icons as per the layout above
+
+---
+
+## Quick Reference: AWS Icon Names in Draw.io
+
+| Component | Icon Name in Draw.io | Color |
+|-----------|---------------------|-------|
+| User | `mxgraph.aws4.user` | Gray |
+| CloudFormation | `mxgraph.aws4.cloudformation` | Pink |
+| IAM Role | `mxgraph.aws4.role` | Red |
+| EC2 | `mxgraph.aws4.ec2_instance` | Orange |
+| Lambda | `mxgraph.aws4.lambda_function` | Orange |
+| RDS | `mxgraph.aws4.rds_instance` | Blue |
+| S3 | `mxgraph.aws4.s3_bucket` | Green |
+| Organizations | `mxgraph.aws4.organizations` | Orange |
+| DevOps Guru | `mxgraph.aws4.devops_guru` | Pink |
+
+---
+
+## Save and Export
+
+### From Draw.io:
+1. File → Export as → PNG (for presentations)
+2. File → Export as → SVG (for scalable graphics)
+3. File → Export as → PDF (for documents)
+4. File → Download → .drawio (to save source)
+
+### From Lucidchart:
+1. File → Export → PNG/PDF/SVG
+2. Share → Get link (for collaboration)
+
+---

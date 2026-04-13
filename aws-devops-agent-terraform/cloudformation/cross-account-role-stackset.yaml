@@ -1,0 +1,92 @@
+# CloudFormation StackSet for Cross-Account Roles
+# Created by murthy on 02/02/2026
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Creates DevOpsAgentCrossAccountRole in target accounts for AWS DevOps Agent monitoring'
+
+Parameters:
+  MonitoringAccountId:
+    Type: String
+    Description: AWS Account ID of the monitoring account (where Agent Space is deployed)
+    AllowedPattern: '^\d{12}$'
+    ConstraintDescription: Must be a valid 12-digit AWS account ID
+  
+  AgentSpaceRoleArn:
+    Type: String
+    Description: ARN of the DevOpsAgentRole-AgentSpace role in monitoring account
+    AllowedPattern: '^arn:aws:iam::\d{12}:role/.*$'
+    ConstraintDescription: Must be a valid IAM role ARN
+  
+  AgentSpaceArn:
+    Type: String
+    Description: ARN of the Agent Space (used as ExternalId)
+    AllowedPattern: '^arn:aws:aidevops:us-east-1:\d{12}:agentspace/.*$'
+    ConstraintDescription: Must be a valid Agent Space ARN
+
+Resources:
+  DevOpsAgentCrossAccountRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: DevOpsAgentCrossAccountRole
+      Description: Cross-account role for AWS DevOps Agent monitoring
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref AgentSpaceRoleArn
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref AgentSpaceArn
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AIOpsAssistantPolicy'
+      Policies:
+        - PolicyName: AIDevOpsAdditionalPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: AllowAwsSupportActions
+                Effect: Allow
+                Action:
+                  - 'support:CreateCase'
+                  - 'support:DescribeCases'
+                Resource: '*'
+              - Sid: AllowExpandedAIOpsAssistantPolicy
+                Effect: Allow
+                Action:
+                  - 'aidevops:GetKnowledgeItem'
+                  - 'aidevops:ListKnowledgeItems'
+                  - 'eks:AccessKubernetesApi'
+                  - 'synthetics:GetCanaryRuns'
+                  - 'route53:GetHealthCheckStatus'
+                  - 'resource-explorer-2:Search'
+                Resource: '*'
+      Tags:
+        - Key: Environment
+          Value: production
+        - Key: Project
+          Value: aws-devops-agent
+        - Key: ManagedBy
+          Value: CloudFormation-StackSet
+        - Key: CreatedBy
+          Value: murthy
+        - Key: CreatedDate
+          Value: '2026-02-02'
+
+Outputs:
+  RoleArn:
+    Description: ARN of the created cross-account role
+    Value: !GetAtt DevOpsAgentCrossAccountRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleArn'
+  
+  RoleName:
+    Description: Name of the created cross-account role
+    Value: !Ref DevOpsAgentCrossAccountRole
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleName'
+  
+  AccountId:
+    Description: AWS Account ID where this role was created
+    Value: !Ref AWS::AccountId
