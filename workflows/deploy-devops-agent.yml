@@ -1,0 +1,456 @@
+# Workflow to deploy OpsAgent using Terraform.
+name: Deploy DevOps Agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform-bootstrap/**'
+      - 'aws-devops-agent-terraform/**'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+env:
+  AWS_REGION: us-west-2
+  TF_VERSION: 1.5.0
+  CCOE_ACCOUNT: "028607042246"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  bootstrap:
+    name: Bootstrap S3 & DynamoDB
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.action != 'destroy'
+    defaults:
+      run:
+        working-directory: terraform-bootstrap
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    outputs:
+      s3_bucket: ${{ steps.outputs.outputs.s3_bucket }}
+      dynamodb_table: ${{ steps.outputs.outputs.dynamodb_table }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::224437138532:role/GitHubCentralCrossAccountRole
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Assume CCOE Account Role
+        run: |
+          CREDS=$(aws sts assume-role \
+            --role-arn arn:aws:iam::${{ env.CCOE_ACCOUNT }}:role/GitHubTargetAccountCrossAccountRole \
+            --role-session-name github-actions-bootstrap)
+          echo "AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r '.Credentials.AccessKeyId')" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')" >> $GITHUB_ENV
+          echo "AWS_SESSION_TOKEN=$(echo $CREDS | jq -r '.Credentials.SessionToken')" >> $GITHUB_ENV
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Validate
+        run: terraform validate
+      
+      - name: Terraform Plan
+        run: terraform plan -detailed-exitcode -no-color || EXIT_CODE=$?
+      
+      - name: Check if Resources Already Exist
+        id: check
+        run: |
+          # Check if S3 bucket exists
+          if aws s3 ls s3://terraform-state-devops-agent-028607042246 2>/dev/null; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "✅ S3 bucket already exists - skipping bootstrap"
+            
+            # Import into state if not already there
+            terraform import aws_s3_bucket.terraform_state terraform-state-devops-agent-028607042246 2>/dev/null || true
+            terraform import aws_dynamodb_table.terraform_lock terraform-state-lock-devops-agent 2>/dev/null || true
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "S3 bucket does not exist - will create"
+          fi
+      
+      - name: Terraform Apply
+        if: steps.check.outputs.skip != 'true'
+        run: terraform apply -auto-approve
+      
+      - name: Save Outputs
+        id: outputs
+        run: |
+          echo "s3_bucket=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "dynamodb_table=$(terraform output -raw dynamodb_table_name)" >> $GITHUB_OUTPUT
+
+  terraform-base:
+    name: Terraform Base Resources
+    runs-on: ubuntu-latest
+    needs: bootstrap
+    if: always()
+    defaults:
+      run:
+        working-directory: aws-devops-agent-terraform
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    outputs:
+      monitoring_account: ${{ steps.tf-outputs.outputs.monitoring_account }}
+      agentspace_role_arn: ${{ steps.tf-outputs.outputs.agentspace_role_arn }}
+      agent_space_arn: ${{ steps.tf-outputs.outputs.agent_space_arn }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::224437138532:role/GitHubCentralCrossAccountRole
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Assume CCOE Account Role
+        run: |
+          CREDS=$(aws sts assume-role \
+            --role-arn arn:aws:iam::${{ env.CCOE_ACCOUNT }}:role/GitHubTargetAccountCrossAccountRole \
+            --role-session-name github-actions-devops-agent)
+          echo "AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r '.Credentials.AccessKeyId')" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')" >> $GITHUB_ENV
+          echo "AWS_SESSION_TOKEN=$(echo $CREDS | jq -r '.Credentials.SessionToken')" >> $GITHUB_ENV
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Validate
+        run: terraform validate
+      
+      - name: Terraform Plan Base Resources
+        run: |
+          terraform plan -no-color \
+            -target=random_id.suffix \
+            -target=data.aws_caller_identity.current \
+            -target=data.aws_region.current \
+            -target=data.aws_iam_policy_document.devops_agentspace_trust \
+            -target=data.aws_iam_policy_document.devops_agentspace_inline \
+            -target=data.aws_iam_policy_document.devops_operator_trust \
+            -target=data.aws_iam_policy_document.devops_operator_inline \
+            -target=aws_iam_role.devops_agentspace \
+            -target=aws_iam_role.devops_operator \
+            -target=aws_iam_role_policy_attachment.devops_agentspace_managed \
+            -target=aws_iam_role_policy.devops_agentspace_inline \
+            -target=aws_iam_role_policy.devops_operator_inline \
+            -target=awscc_devopsagent_agent_space.main \
+            -target=time_sleep.wait_for_iam_propagation \
+            -target=awscc_devopsagent_association.primary_aws_account
+      
+      - name: Terraform Apply Base Resources
+        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
+        run: |
+          # Apply everything except cross-account associations
+          terraform apply -auto-approve \
+            -target=random_id.suffix \
+            -target=data.aws_caller_identity.current \
+            -target=data.aws_region.current \
+            -target=data.aws_iam_policy_document.devops_agentspace_trust \
+            -target=data.aws_iam_policy_document.devops_agentspace_inline \
+            -target=data.aws_iam_policy_document.devops_operator_trust \
+            -target=data.aws_iam_policy_document.devops_operator_inline \
+            -target=aws_iam_role.devops_agentspace \
+            -target=aws_iam_role.devops_operator \
+            -target=aws_iam_role_policy_attachment.devops_agentspace_managed \
+            -target=aws_iam_role_policy.devops_agentspace_inline \
+            -target=aws_iam_role_policy.devops_operator_inline \
+            -target=awscc_devopsagent_agent_space.main \
+            -target=time_sleep.wait_for_iam_propagation \
+            -target=awscc_devopsagent_association.primary_aws_account
+      
+      - name: Get Terraform Outputs
+        id: tf-outputs
+        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
+        run: |
+          echo "monitoring_account=$(terraform output -raw account_id)" >> $GITHUB_OUTPUT
+          echo "agentspace_role_arn=$(terraform output -raw devops_agentspace_role_arn)" >> $GITHUB_OUTPUT
+          echo "agent_space_arn=$(terraform output -raw agent_space_arn)" >> $GITHUB_OUTPUT
+      
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: terraform destroy -auto-approve
+
+  stackset:
+    name: Deploy StackSet
+    runs-on: ubuntu-latest
+    needs: terraform-base
+    if: (always() && needs.terraform-base.result != 'failure') && (github.event_name == 'push' || github.event.inputs.action == 'apply')
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::224437138532:role/GitHubCentralCrossAccountRole
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Assume CCOE Account Role
+        run: |
+          CREDS=$(aws sts assume-role \
+            --role-arn arn:aws:iam::${{ env.CCOE_ACCOUNT }}:role/GitHubTargetAccountCrossAccountRole \
+            --role-session-name github-actions-stackset)
+          echo "AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r '.Credentials.AccessKeyId')" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')" >> $GITHUB_ENV
+          echo "AWS_SESSION_TOKEN=$(echo $CREDS | jq -r '.Credentials.SessionToken')" >> $GITHUB_ENV
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      
+      - name: Use Terraform Outputs from Previous Job
+        run: |
+          echo "MONITORING_ACCOUNT=${{ needs.terraform-base.outputs.monitoring_account }}" >> $GITHUB_ENV
+          echo "AGENTSPACE_ROLE_ARN=${{ needs.terraform-base.outputs.agentspace_role_arn }}" >> $GITHUB_ENV
+          echo "AGENT_SPACE_ARN=${{ needs.terraform-base.outputs.agent_space_arn }}" >> $GITHUB_ENV
+      
+      - name: Register Delegated Administrator (if needed)
+        run: |
+          # Check if already registered as delegated admin
+          aws organizations list-delegated-administrators \
+            --service-principal member.org.stacksets.cloudformation.amazonaws.com \
+            --query 'DelegatedAdministrators[?Id==`028607042246`]' \
+            --output text || \
+          # If not registered, register it
+          aws organizations register-delegated-administrator \
+            --account-id 028607042246 \
+            --service-principal member.org.stacksets.cloudformation.amazonaws.com || \
+          echo "Already registered or no permissions to register"
+        continue-on-error: true
+      
+      - name: Create or Update StackSet
+        run: |
+          aws cloudformation create-stack-set \
+            --stack-set-name DevOpsAgent-CrossAccountRoles \
+            --template-body file://aws-devops-agent-terraform/cloudformation/cross-account-role-stackset.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameters \
+              ParameterKey=MonitoringAccountId,ParameterValue=${{ env.MONITORING_ACCOUNT }} \
+              ParameterKey=AgentSpaceRoleArn,ParameterValue=${{ env.AGENTSPACE_ROLE_ARN }} \
+              ParameterKey=AgentSpaceArn,ParameterValue=${{ env.AGENT_SPACE_ARN }} \
+            --permission-model SERVICE_MANAGED \
+            --auto-deployment Enabled=true,RetainStacksOnAccountRemoval=false \
+            --call-as DELEGATED_ADMIN \
+            --region ${{ env.AWS_REGION }} || \
+          aws cloudformation update-stack-set \
+            --stack-set-name DevOpsAgent-CrossAccountRoles \
+            --template-body file://aws-devops-agent-terraform/cloudformation/cross-account-role-stackset.yaml \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --parameters \
+              ParameterKey=MonitoringAccountId,ParameterValue=${{ env.MONITORING_ACCOUNT }} \
+              ParameterKey=AgentSpaceRoleArn,ParameterValue=${{ env.AGENTSPACE_ROLE_ARN }} \
+              ParameterKey=AgentSpaceArn,ParameterValue=${{ env.AGENT_SPACE_ARN }} \
+            --permission-model SERVICE_MANAGED \
+            --auto-deployment Enabled=true,RetainStacksOnAccountRemoval=false \
+            --call-as DELEGATED_ADMIN \
+            --region ${{ env.AWS_REGION }}
+      
+      - name: Deploy StackSet Instances
+        run: |
+          ACCOUNTS=$(cat aws-devops-agent-terraform/cloudformation/target-accounts.txt | grep -v "^#" | grep -v "^$" | tr '\n' ',' | sed 's/,$//')
+          echo "Deploying to accounts: $ACCOUNTS"
+          
+          # Get OUs for all accounts dynamically
+          OUS=""
+          for ACCOUNT in $(echo $ACCOUNTS | tr ',' ' '); do
+            OU=$(aws organizations list-parents --child-id $ACCOUNT --query 'Parents[0].Id' --output text 2>/dev/null)
+            if [ -n "$OU" ]; then
+              OUS="$OUS,$OU"
+            fi
+          done
+          OUS=$(echo "$OUS" | tr ',' '\n' | sort -u | tr '\n' ',' | sed 's/^,//' | sed 's/,$//')
+          
+          echo "Deploying to OUs: $OUS with account filter: $ACCOUNTS"
+          
+          aws cloudformation create-stack-instances \
+            --stack-set-name DevOpsAgent-CrossAccountRoles \
+            --deployment-targets OrganizationalUnitIds=$OUS,AccountFilterType=INTERSECTION,Accounts=$ACCOUNTS \
+            --regions ${{ env.AWS_REGION }} \
+            --operation-preferences MaxConcurrentCount=2,FailureToleranceCount=1 \
+            --call-as DELEGATED_ADMIN \
+            --region ${{ env.AWS_REGION }} 2>&1 || echo "Stack instances may already exist"
+      
+      - name: Wait for StackSet Deployment
+        run: |
+          echo "Waiting for StackSet instances to complete..."
+          ACCOUNTS=$(cat aws-devops-agent-terraform/cloudformation/target-accounts.txt | grep -v "^#" | grep -v "^$")
+          for ACCOUNT in $ACCOUNTS; do
+            echo "Checking stack instance for account $ACCOUNT..."
+            for i in {1..30}; do
+              STATUS=$(aws cloudformation describe-stack-instance \
+                --stack-set-name DevOpsAgent-CrossAccountRoles \
+                --stack-instance-account $ACCOUNT \
+                --stack-instance-region ${{ env.AWS_REGION }} \
+                --call-as DELEGATED_ADMIN \
+                --region ${{ env.AWS_REGION }} \
+                --query 'StackInstance.Status' \
+                --output text 2>&1)
+              
+              if [ "$STATUS" = "CURRENT" ]; then
+                echo "✓ Account $ACCOUNT: CURRENT"
+                break
+              elif [[ "$STATUS" == *"StackInstanceNotFoundException"* ]]; then
+                echo "Account $ACCOUNT: Not found yet (attempt $i/30)"
+              else
+                echo "Account $ACCOUNT: $STATUS (attempt $i/30)"
+              fi
+              
+              if [ $i -lt 30 ]; then
+                sleep 10
+              fi
+            done
+          done
+      
+      - name: Delete StackSet Instances
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          echo "Deleting StackSet instances..."
+          ACCOUNTS=$(cat aws-devops-agent-terraform/cloudformation/target-accounts.txt | tr '\n' ',' | sed 's/,$//')
+          aws cloudformation delete-stack-instances \
+            --stack-set-name DevOpsAgent-CrossAccountRoles \
+            --deployment-targets Accounts=$ACCOUNTS \
+            --regions ${{ env.AWS_REGION }} \
+            --no-retain-stacks \
+            --call-as DELEGATED_ADMIN \
+            --region ${{ env.AWS_REGION }} || echo "No instances to delete"
+          
+          echo "Waiting for instances to delete..."
+          sleep 60
+      
+      - name: Delete StackSet
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          echo "Deleting StackSet..."
+          aws cloudformation delete-stack-set \
+            --stack-set-name DevOpsAgent-CrossAccountRoles \
+            --call-as DELEGATED_ADMIN \
+            --region ${{ env.AWS_REGION }} || echo "StackSet already deleted"
+
+  terraform-cross-account:
+    name: Terraform Cross-Account Associations
+    runs-on: ubuntu-latest
+    needs: stackset
+    if: always() && needs.stackset.result != 'failure'
+    defaults:
+      run:
+        working-directory: aws-devops-agent-terraform
+    
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::224437138532:role/GitHubCentralCrossAccountRole
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Assume CCOE Account Role
+        run: |
+          CREDS=$(aws sts assume-role \
+            --role-arn arn:aws:iam::${{ env.CCOE_ACCOUNT }}:role/GitHubTargetAccountCrossAccountRole \
+            --role-session-name github-actions-cross-account)
+          echo "AWS_ACCESS_KEY_ID=$(echo $CREDS | jq -r '.Credentials.AccessKeyId')" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=$(echo $CREDS | jq -r '.Credentials.SecretAccessKey')" >> $GITHUB_ENV
+          echo "AWS_SESSION_TOKEN=$(echo $CREDS | jq -r '.Credentials.SessionToken')" >> $GITHUB_ENV
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      
+      - name: Generate Terraform Variables from Target Accounts
+        run: |
+          echo 'Generating external_accounts from target-accounts.txt...'
+          echo 'external_accounts = {' > generated.auto.tfvars
+          cat cloudformation/target-accounts.txt | grep -v "^#" | grep -v "^$" | while read ACCOUNT; do
+            echo "  \"$ACCOUNT\" = {" >> generated.auto.tfvars
+            echo "    account_id = \"$ACCOUNT\"" >> generated.auto.tfvars
+            echo "  }" >> generated.auto.tfvars
+          done
+          echo '}' >> generated.auto.tfvars
+          echo "Generated tfvars:"
+          cat generated.auto.tfvars
+      
+      - name: Terraform Init
+        run: terraform init
+      
+      - name: Terraform Validate
+        run: terraform validate
+      
+      - name: Terraform Plan Cross-Account Associations
+        run: |
+          terraform plan -no-color \
+            -target=data.aws_iam_policy_document.cross_account_access \
+            -target=aws_iam_role_policy.cross_account_access \
+            -target=time_sleep.wait_for_cross_account_iam \
+            -target=awscc_devopsagent_association.external_aws_accounts
+      
+      - name: Terraform Apply Cross-Account Associations
+        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
+        run: terraform apply -auto-approve
+      
+      - name: Enable Operator App
+        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
+        run: |
+          AGENT_SPACE_ID=$(terraform output -raw agent_space_id)
+          OPERATOR_ROLE_ARN=$(terraform output -raw operator_app_role_arn)
+          
+          echo "Enabling Operator App..."
+          aws devops-agent enable-operator-app \
+            --agent-space-id $AGENT_SPACE_ID \
+            --auth-flow iam \
+            --operator-app-role-arn $OPERATOR_ROLE_ARN \
+            --region ${{ env.AWS_REGION }} || echo "⚠️  Operator app may already be enabled"
+          
+          echo "✓ Operator App configuration complete!"
+      
+      - name: Terraform Destroy Cross-Account Associations
+        if: github.event.inputs.action == 'destroy'
+        run: |
+          terraform destroy -auto-approve \
+            -target=awscc_devopsagent_association.external_aws_accounts \
+            -target=aws_iam_role_policy.cross_account_access
